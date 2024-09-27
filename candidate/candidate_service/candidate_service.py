@@ -31,3 +31,20 @@ class CandidateService:
             email=email
         )
         return is_deleted
+    
+    def search_candidates(self, words):
+        candidates = []
+        records = self.candidate_model_service.search_candidates(words=words)
+
+        for record in records:
+            candidates.append(
+                CandidateRecord(
+                    id=record.id,
+                    name=record.name,
+                    age=record.age,
+                    email=record.email,
+                    phone_number=record.phone_number,
+                    gender=record.gender
+                )
+            )
+        return candidates

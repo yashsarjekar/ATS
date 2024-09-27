@@ -157,4 +157,55 @@ class CandidateView(APIView):
                 }
             }
             return Response(response_dict, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+class SearchCandidate(APIView):
+    def __init__(self):
+        self.candidate_service = CandidateService()
+
+    def get(self, request):
+        try:
+            query = self.request.query_params.get('query', '')
+            if not query:
+                response_dict = {
+                    "meta": {
+                        "message": "[INFO] Please provide search query",
+                        "success": False,
+                        "status": 200
+                    }
+                }
+                return Response(response_dict)
+            
+            query_words = query.split()
+
+            results = self.candidate_service.search_candidates(words=query_words)
+            candidates = []
+
+            for candidate_record in results:
+                candidates.append({
+                    "id": candidate_record.get_id(),
+                    "name": candidate_record.get_name(),
+                    "email": candidate_record.get_email(),
+                    "age": candidate_record.get_age(),
+                    "gender": candidate_record.get_gender(),
+                    "phone_number": candidate_record.get_phone_number()
+                })
+
+            response_dict = {
+                "meta": {
+                    "message": "[INFO] Required Results",
+                    "success": True,
+                    "status": 200
+                },
+                "results": candidates
+            }
+            return Response(response_dict)
+        except Exception as error:
+            # Log the error or send error to sentry.
+            response_dict = {
+                "meta": {
+                    "message": "Ops! Internal Server Error",
+                    "success": False,
+                    "status": 500
+                }
+            }
+            return Response(response_dict, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

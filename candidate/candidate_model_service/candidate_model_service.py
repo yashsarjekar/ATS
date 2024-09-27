@@ -1,6 +1,7 @@
 from candidate.models import Candidate
 from candidate.objects.candidate_details import CandidateDetails
 from candidate.objects.candidate_already_exist_exception import CandidateAlreadyExist
+from django.db.models import Q, Count, IntegerField, Case, When, F, Sum, Value
 
 class CandidateModelService:
 
@@ -44,3 +45,22 @@ class CandidateModelService:
             is_deleted = False
         
         return is_deleted
+    
+    def search_candidates(self, words):
+        orm_query = Q()
+        for word in words:
+            orm_query |= Q(name__icontains=word)
+        queryset = Candidate.objects.filter(orm_query).distinct()
+        annotations = {
+            'match_count': sum(
+                Case(
+                    When(name__icontains=word, then=1),
+                    default=0,
+                    output_field=IntegerField()
+                ) for word in words
+            )
+        }
+        queryset = queryset.annotate(
+            **annotations
+        ).order_by('-match_count')
+        return queryset
